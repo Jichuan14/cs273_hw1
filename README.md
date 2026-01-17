@@ -2,4 +2,11 @@
 
 Follow the instructions in `hw1.pdf`
 
-After you've completed this, push your code to the GitHub repository to submit, this will trigger an automatic grading script, so please try to only push your code once you've completed all questions. Please DO NOT modify anything under the `.github` folder, this is intended for the grader.
+To ensure there is no version-related problem during autograding, setup a virtual environment and run your code in it. To setup a virtual environment and install dependencies, run:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+

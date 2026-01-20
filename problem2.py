@@ -8,6 +8,7 @@ The autograder will import and call these functions.
 from typing import Tuple, Dict
 import numpy as np
 import sys
+import torchvision
 
 
 def load_cifar10(data_dir: str = "data") -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -30,7 +31,13 @@ def load_cifar10(data_dir: str = "data") -> Tuple[np.ndarray, np.ndarray, np.nda
     # Return numpy arrays (X_train, y_train, X_test, y_test) where
     # images are normalized to [0,1] and flattened to shape (n, d),
     # and labels are dtype np.int64.
-    raise NotImplementedError("Implement using torchvision.datasets.CIFAR10 and return numpy arrays")
+    datasets = torchvision.datasets.CIFAR10(root=data_dir, train=True, download=True)
+    X_train = datasets.data
+    y_train = datasets.targets
+    datasets = torchvision.datasets.CIFAR10(root=data_dir, train=False, download=True)
+    X_test = datasets.data
+    y_test = datasets.targets
+    return X_train, y_train, X_test, y_test
 
 
 def compute_distances(X_train: np.ndarray, X_test: np.ndarray) -> np.ndarray:

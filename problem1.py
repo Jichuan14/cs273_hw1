@@ -27,7 +27,7 @@ def get_shape(X: np.ndarray) -> Tuple[int, int]:
     n_features : int
     """
     # TODO: replace with your implementation
-    raise NotImplementedError
+    return X.shape[0], X.shape[1]
 
 
 def feature_histograms(X: np.ndarray, bins: int = 10) -> List[Tuple[np.ndarray, np.ndarray]]:
@@ -48,7 +48,11 @@ def feature_histograms(X: np.ndarray, bins: int = 10) -> List[Tuple[np.ndarray, 
         (hist, bin_edges) as returned by np.histogram for that feature.
     """
     # TODO: replace with your implementation
-    raise NotImplementedError
+    histograms = []
+    for i in range(X.shape[1]):
+        hist, bin_edges = np.histogram(X[:, i], bins=bins)
+        histograms.append((hist, bin_edges))
+    return histograms
 
 
 def compute_stats(X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -68,7 +72,9 @@ def compute_stats(X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         1D array of shape (n_features,) with feature standard deviations.
     """
     # TODO: replace with your implementation
-    raise NotImplementedError
+    means = np.mean(X, axis=0)
+    stds = np.std(X, axis=0)
+    return means, stds
 
 
 def scatter_pairs(
@@ -99,8 +105,13 @@ def scatter_pairs(
         containing the selected feature values.
     """
     # TODO: replace with your implementation
-    raise NotImplementedError
-
+    result = {}
+    for (i, j) in feature_pairs:
+        result[(i, j)] = {}
+        for label in np.unique(y):
+            class_points = X[y == label]
+            result[(i, j)][label] = class_points[:, [i, j]]
+    return result
 
 def _load_iris() -> Tuple[np.ndarray, np.ndarray]:
     """

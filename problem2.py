@@ -31,12 +31,15 @@ def load_cifar10(data_dir: str = "data") -> Tuple[np.ndarray, np.ndarray, np.nda
     # Return numpy arrays (X_train, y_train, X_test, y_test) where
     # images are normalized to [0,1] and flattened to shape (n, d),
     # and labels are dtype np.int64.
-    datasets = torchvision.datasets.CIFAR10(root=data_dir, train=True, download=True)
-    X_train = datasets.data
-    y_train = datasets.targets
-    datasets = torchvision.datasets.CIFAR10(root=data_dir, train=False, download=True)
-    X_test = datasets.data
-    y_test = datasets.targets
+    train_set = torchvision.datasets.CIFAR10(root=data_dir, train=True, download=True)
+    test_set = torchvision.datasets.CIFAR10(root=data_dir, train=False, download=True)
+    X_train = train_set.data.astype(np.float32) / 255.0
+    X_train = X_train.reshape(X_train.shape[0], -1)
+    y_train = np.array(train_set.targets, dtype=np.int64)
+    X_test = test_set.data.astype(np.float32) / 255.0
+    X_test = X_test.reshape(X_test.shape[0], -1)
+    y_test = np.array(test_set.targets, dtype=np.int64)
+
     return X_train, y_train, X_test, y_test
 
 
@@ -56,9 +59,12 @@ def compute_distances(X_train: np.ndarray, X_test: np.ndarray) -> np.ndarray:
     dists : np.ndarray
         Distance matrix of shape (n_test, n_train),
         where dists[i, j] is the distance between X_test[i] and X_train[j].
-    """
-    # TODO: replace with your implementation
-    raise NotImplementedError
+    """    
+    X_test_sq = np.sum(X_test ** 2, axis=1, keepdims=True)
+    X_train_sq = np.sum(X_train ** 2, axis=1, keepdims=True).T
+    dists_sq = X_test_sq + X_train_sq - 2.0 * (X_test @ X_train.T)
+    dists_sq = np.maximum(dists_sq, 0.0)
+    return np.sqrt(dists_sq)
 
 
 def predict_knn(
@@ -84,7 +90,13 @@ def predict_knn(
         Predicted labels of shape (n_test,).
     """
     # TODO: replace with your implementation
-    raise NotImplementedError
+    y_pred = np.zeros(dists.shape[0])
+    for i in range(dists.shape[0]):
+        nearest_indices = np.argsort(dists[i])[:k]
+        nearest_labels = y_train[nearest_indices]
+        y_pred[i] = np.argmax(np.bincount(nearest_labels))
+    return y_pred
+    
 
 
 def evaluate_accuracy(
@@ -110,7 +122,13 @@ def evaluate_accuracy(
         A dictionary mapping k -> accuracy (0.0 to 1.0).
     """
     # TODO: replace with your implementation
-    raise NotImplementedError
+    accuracies = {}
+    dists=compute_distances(X_train, X_test)
+    for k in k_values:
+        y_pred = predict_knn(dists, y_train, k)
+        accuracies[k] = np.mean(y_pred == y_test)
+    return accuracies
+        
 
 
 def main() -> int:

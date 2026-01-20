@@ -54,7 +54,13 @@ def estimate_nb_params(X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
             with p(x_i=1 | y) for each feature i.
     """
     # TODO: replace with your implementation
-    raise NotImplementedError
+    class_prior = {}
+    feature_conditional = {}
+    for label in np.unique(y):
+        mask = y == label
+        class_prior[label] = X[mask].shape[0] / X.shape[0]
+        feature_conditional[label] = X[mask].mean(axis=0)
+    return {'class_prior': class_prior, 'feature_conditional': feature_conditional}
 
 
 def predict_nb(x: np.ndarray, params: Dict[str, Any]) -> int:
@@ -75,8 +81,21 @@ def predict_nb(x: np.ndarray, params: Dict[str, Any]) -> int:
     y_pred : int
         Predicted label (+1 or -1).
     """
-    # TODO: replace with your implementation
-    raise NotImplementedError
+    class_prior = params["class_prior"]
+    feature_conditional = params["feature_conditional"]
+
+    log_posteriors = {}
+    for label in class_prior:
+        p_y = class_prior[label]
+        p_x_given_y = feature_conditional[label]
+        log_likelihood = np.sum(
+            x * np.log(p_x_given_y) + (1 - x) * np.log(1 - p_x_given_y)
+        )
+        log_posteriors[label] = np.log(p_y) + log_likelihood
+
+    if log_posteriors[+1] >= log_posteriors[-1]:
+        return +1
+    return -1
 
 
 def posterior_nb(x: np.ndarray, params: Dict[str, Any]) -> float:
@@ -95,8 +114,24 @@ def posterior_nb(x: np.ndarray, params: Dict[str, Any]) -> float:
     p_pos : float
         Posterior probability that y = +1 given x.
     """
-    # TODO: replace with your implementation
-    raise NotImplementedError
+    class_prior = params["class_prior"]
+    feature_conditional = params["feature_conditional"]
+
+    log_posteriors = {}
+    for label in class_prior:
+        p_y = class_prior[label]
+        p_x_given_y = feature_conditional[label]
+        log_likelihood = np.sum(
+            x * np.log(p_x_given_y) + (1 - x) * np.log(1 - p_x_given_y)
+        )
+        log_posteriors[label] = np.log(p_y) + log_likelihood
+
+    log_pos = log_posteriors[+1]
+    log_neg = log_posteriors[-1]
+    max_log = max(log_pos, log_neg)
+    num = np.exp(log_pos - max_log)
+    denom = num + np.exp(log_neg - max_log)
+    return float(num / denom)
 
 
 def drop_feature_and_retrain(X: np.ndarray, y: np.ndarray):
@@ -119,8 +154,16 @@ def drop_feature_and_retrain(X: np.ndarray, y: np.ndarray):
     preds_reduced : np.ndarray
         Predictions on X_reduced (dropping first feature).
     """
-    # TODO: replace with your implementation
-    raise NotImplementedError
+    params_full = estimate_nb_params(X, y)
+    preds_full = np.array([predict_nb(x, params_full) for x in X], dtype=np.int64)
+
+    X_reduced = X[:, 1:]
+    params_reduced = estimate_nb_params(X_reduced, y)
+    preds_reduced = np.array(
+        [predict_nb(x, params_reduced) for x in X_reduced], dtype=np.int64
+    )
+
+    return preds_full, preds_reduced
 
 
 def compare_accuracy(csv_path: str = "data/email_data.csv") -> str:
@@ -145,8 +188,17 @@ def compare_accuracy(csv_path: str = "data/email_data.csv") -> str:
     verdict : str
         One of {"improves", "degrades", "stays the same"}.
     """
-    # TODO: replace with your implementation
-    raise NotImplementedError
+    X, y = load_email_data(csv_path)
+    preds_full, preds_reduced = drop_feature_and_retrain(X, y)
+
+    acc_full = float(np.mean(preds_full == y))
+    acc_reduced = float(np.mean(preds_reduced == y))
+
+    if acc_reduced > acc_full:
+        return "improves"
+    if acc_reduced < acc_full:
+        return "degrades"
+    return "stays the same"
 
 
 def main() -> int:

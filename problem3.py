@@ -56,11 +56,14 @@ def estimate_nb_params(X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
     # TODO: replace with your implementation
     class_prior = {}
     feature_conditional = {}
+    n_samples = X.shape[0]
     for label in np.unique(y):
         mask = y == label
-        class_prior[label] = X[mask].shape[0] / X.shape[0]
-        feature_conditional[label] = X[mask].mean(axis=0)
-    return {'class_prior': class_prior, 'feature_conditional': feature_conditional}
+        X_label = X[mask]
+        class_prior[label] = X_label.shape[0] / n_samples
+        count_ones = np.sum(X_label, axis=0)
+        feature_conditional[label] = (count_ones + 1.0) / (X_label.shape[0] + 2.0)
+    return {"class_prior": class_prior, "feature_conditional": feature_conditional}
 
 
 def predict_nb(x: np.ndarray, params: Dict[str, Any]) -> int:
@@ -88,6 +91,7 @@ def predict_nb(x: np.ndarray, params: Dict[str, Any]) -> int:
     for label in class_prior:
         p_y = class_prior[label]
         p_x_given_y = feature_conditional[label]
+        p_x_given_y = np.clip(p_x_given_y, 1e-9, 1.0 - 1e-9)
         log_likelihood = np.sum(
             x * np.log(p_x_given_y) + (1 - x) * np.log(1 - p_x_given_y)
         )
@@ -121,6 +125,7 @@ def posterior_nb(x: np.ndarray, params: Dict[str, Any]) -> float:
     for label in class_prior:
         p_y = class_prior[label]
         p_x_given_y = feature_conditional[label]
+        p_x_given_y = np.clip(p_x_given_y, 1e-9, 1.0 - 1e-9)
         log_likelihood = np.sum(
             x * np.log(p_x_given_y) + (1 - x) * np.log(1 - p_x_given_y)
         )
